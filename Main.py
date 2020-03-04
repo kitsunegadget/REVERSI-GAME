@@ -1,18 +1,23 @@
 import tkinter as tk
 import numpy as np
 import GameList
+import MineSweep
 
 def reverseStart():
     game = GameList.ReverseGame()
     game.Start()
 
+def MineSweepStart():
+    game = MineSweep.MineSweep();
+    game.Start()
+
 window = tk.Tk()
 window.title("Test")
-#window.geometry(("200x200"))
+window.geometry(("300x100"))
 
 frame = tk.Frame(window)
-frame["height"] = 200
-frame["width"] = 200
+#frame["height"] = 300
+#frame["width"] = 200
 #frame["relief"] = "sunken"
 #frame["borderwidth"] = 5
 #frame["padding"] = 5
@@ -33,5 +38,12 @@ button1 = tk.Button(
     command=reverseStart
 )
 button1.grid(row=2, column=1)
+
+button2 = tk.Button(
+    frame,
+    text="マインスイーパ",
+    command=MineSweepStart
+)
+button2.grid(row=3, column=1)
 
 window.mainloop()
