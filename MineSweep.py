@@ -1,10 +1,12 @@
 import numpy as np
 import tkinter as tk
-from tkinter.font import Font
 import tkinter.messagebox as tkmsg
+import threading
+import time
 
 class MineSweep:
-    """マインスイーパ
+    """
+    マインスイーパ
     """
     # 数字の色
     fgcolor = ["blue","green","red","yellow","purple","pink","white","black"]
@@ -26,6 +28,7 @@ class MineSweep:
     UNKNOWN = 4
     OPEN = -2
 
+
     def __init__(self):
         # ゲームサイズ
         self.x = 9
@@ -34,9 +37,12 @@ class MineSweep:
         # Mine の数
         self.mine_num = 12
 
+        # time
+        self.time_count = 0
+        self.GAMEEND = False
+
         self.__gameInit()
         self.__windowInit()
-
 
     def __gameInit(self):
         entire_size = self.x * self.y
@@ -56,7 +62,6 @@ class MineSweep:
         self.game = data
         self.game_button = []
     
-
     def __windowInit(self):
         self.root = tk.Tk()
         self.root.title("マインスイーパー：")
@@ -72,7 +77,9 @@ class MineSweep:
                 bt["bg"] = "#ccc"
                 bt["fg"] = "#eee"
                 bt["relief"] = tk.RAISED
-                bt["state"] = tk.DISABLED
+                bt["state"] = tk.NORMAL
+                bt["disabledforeground"] = "#eee"
+                # print(bt.keys())
                 self.game_button.append(bt)
                 bt.grid(row=i, column=j)
                 bt.bind("<1>", (lambda e: self.__mainClick(e)))
@@ -80,66 +87,92 @@ class MineSweep:
         
         self.game_button = np.array(self.game_button).reshape((self.y, self.x))
 
-
     def Start(self):
+        """ Start MineSweeper """
         print("MineSweep Start!")
-    
+        self.click_count = 0
+        self.root.mainloop()
 
-    # Left click event
+    def __countTime(self):
+        """ 時間計測 (スレッド呼び出し専用) """
+        while not self.GAMEEND:
+            self.__changeTitle("")
+            # print(self.time_count)
+            self.time_count += 1
+            time.sleep(1)
+            
+
     def __mainClick(self, event):
+        """ Left click event """
+        # set time thread
+        if self.click_count == 0:
+            self.thread = threading.Thread(target=self.__countTime)
+            self.thread.daemon = True
+            self.thread.start()
+        
+        self.click_count += 1
+
         for v, vals in enumerate(self.game_button):
             for u, val in enumerate(vals):
                 if val == event.widget:
-                    #print(u, v)
+                    # print(u, v)
                     j = v
                     i = u
         
         if self.game[j][i] == self.MINE:
-            event.widget.configure(text="x", foreground="#fff")
             self.__gameOver()
             return
         
-        print(self.game);
+        print(self.game)
         
         self.__search(j, i)
 
-    # Right click event
     def __subClick(self, event):
+        """ Right click event """
         for v, vals in enumerate(self.game_button):
             for u, val in enumerate(vals):
                 if val == event.widget:
-                    #print(u, v)
+                    # print(u, v)
                     j = v
                     i = u
 
         if self.game[j][i] == self.CLOSED or self.game[j][i] == self.MINE:
-            event.widget.configure(text="F", foreground="#f00", state=tk.NORMAL)
+            event.widget.configure(
+                text="▼", 
+                foreground="#333", 
+            )
             event.widget.unbind("<1>")
             self.game[j][i] += self.FLAG
-            print(self.game[j][i])
+            # print(self.game[j][i])
         
         elif self.game[j][i] & self.FLAG == 0b10:
-            event.widget.configure(text="❓", foreground="#f00", state=tk.NORMAL)
+            event.widget.configure(
+                text="❔", 
+                foreground="#333",
+            )
             self.game[j][i] += (self.UNKNOWN - self.FLAG) 
-            print(self.game[j][i])
+            # print(self.game[j][i])
         
         elif self.game[j][i] & self.UNKNOWN == 0b100:
             event.widget.bind("<1>", (lambda e: self.__mainClick(e)))
-            event.widget.configure(text="", foreground="#fff", state=tk.NORMAL)
+            event.widget.configure(
+                text="", 
+            )
             self.game[j][i] -= self.UNKNOWN
-            print(self.game[j][i])
+            # print(self.game[j][i])
 
     
     def __gameClear(self):
+        self.GAMEEND = True
         print("Game Clear")
-        self.root.title("マインスイーパー：Game Clear")
+        self.__changeTitle("Game Clear!")
         for v, vals in enumerate(self.game):
             for u, val in enumerate(vals):
                 if val & self.MINE == 1:
                     self.game_button[v][u].configure(
-                        state=tk.NORMAL, 
                         text="✔", 
-                        foreground="#0a0")
+                        foreground="#0a0"
+                    )
         
         for v in self.game_button:
             for u in v:
@@ -147,25 +180,32 @@ class MineSweep:
                 u.unbind("<3>")
 
     def __gameOver(self):
+        self.GAMEEND = True
         print("Game Over")
-        self.root.title("マインスイーパー：Game Over")
+        self.__changeTitle("Game Over!")
         for v, vals in enumerate(self.game):
             for u, val in enumerate(vals):
                 if val & self.MINE == 1:
                     self.game_button[v][u].configure(
-                        state=tk.NORMAL, 
                         text="❌", 
-                        foreground="#e00")
+                        foreground="#e00"
+                    )
         
         for v in self.game_button:
             for u in v:
                 u.unbind("<1>")
                 u.unbind("<3>")
+    
+    def __changeTitle(self, state):
+        """ `state`: display String. """
+        if (self.GAMEEND):
+            self.time_count -= 1
         
+        self.root.title("マインスイーパー： " + state + "  " + str(self.time_count) + "s")
         
-        
-    # 周囲8マス探索
+
     def __search(self, posY, posX):
+        """ 周囲8マス探索 """
         if self.game[posY][posX] & self.MINE == 1:
             return
 
@@ -174,8 +214,8 @@ class MineSweep:
         for v in range(-1, 2):
             for u in range(-1, 2):
                 # print(v, u)
-                if posY + v < 0 or self.y - 1 < posY + v \
-                        or posX + u < 0 or self.x - 1 < posX + u:
+                if (posY + v < 0) or (self.y - 1 < posY + v) \
+                        or (posX + u < 0) or (self.x - 1 < posX + u):
                     continue
 
                 if self.game[posY + v][posX + u] & self.MINE == 1:
@@ -185,10 +225,11 @@ class MineSweep:
         if mines != 0:
             self.game_button[posY][posX].configure(
                 text=str(mines), 
-                foreground=self.fgcolor[mines-1],
-                state=tk.NORMAL,
+                disabledforeground=self.fgcolor[mines-1],
                 background="#999",
-                relief=tk.SUNKEN)
+                state=tk.DISABLED,
+                relief=tk.SUNKEN
+            )
             self.game_button[posY][posX].unbind("<1>")
             self.game_button[posY][posX].unbind("<3>")
             self.game[posY][posX] = self.OPEN
@@ -196,9 +237,11 @@ class MineSweep:
         else:
             self.game_button[posY][posX].configure(
                 text="",
-                background="#999", 
+                disabledforeground=self.fgcolor[mines-1],
+                background="#999",
                 state=tk.DISABLED,
-                relief=tk.SUNKEN)
+                relief=tk.SUNKEN
+            )
             self.game_button[posY][posX].unbind("<1>")
             self.game_button[posY][posX].unbind("<3>")
             self.game[posY][posX] = self.OPEN
@@ -206,8 +249,8 @@ class MineSweep:
             # 0のときは更に周りのマスを中心に探索
             for v in range(-1, 2):
                 for u in range(-1, 2):
-                    if posY + v < 0 or self.y - 1 < posY + v \
-                            or posX + u < 0 or self.x - 1 < posX + u:
+                    if (posY + v < 0) or (self.y - 1 < posY + v) \
+                            or (posX + u < 0) or (self.x - 1 < posX + u):
                         continue
 
                     # 隣のマスにおいてのmineを更に探索
@@ -217,8 +260,8 @@ class MineSweep:
         self.__clearCheck()
         
 
-    # クリアチェック
     def __clearCheck(self):
+        """ クリアチェック """
         openedCount = 0
         for vals in self.game:
             for val in vals:
@@ -227,3 +270,9 @@ class MineSweep:
         
         if openedCount == self.x * self.y:
             self.__gameClear()
+
+
+# 単体テスト用
+if __name__ == "__main__":
+    game = MineSweep()
+    game.Start()
