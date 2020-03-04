@@ -32,7 +32,7 @@ class MineSweep:
         self.y = 9
 
         # Mine の数
-        self.mine_num = 13
+        self.mine_num = 12
 
         self.__gameInit()
         self.__windowInit()
@@ -138,8 +138,8 @@ class MineSweep:
                 if val & self.MINE == 1:
                     self.game_button[v][u].configure(
                         state=tk.NORMAL, 
-                        text="⭕", 
-                        foreground="#f00")
+                        text="✔", 
+                        foreground="#0a0")
         
         for v in self.game_button:
             for u in v:
@@ -155,7 +155,7 @@ class MineSweep:
                     self.game_button[v][u].configure(
                         state=tk.NORMAL, 
                         text="❌", 
-                        foreground="#f00")
+                        foreground="#e00")
         
         for v in self.game_button:
             for u in v:
