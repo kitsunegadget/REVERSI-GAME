@@ -1,11 +1,15 @@
 # REVERSI GAME
 
-## MINE SWEEP GAME
+## REVERSI
+
+## MINE SWEEPER
 
 using tkinter from python.
 
 ### History
 
+- 2020/03/05
+  - 時間計測機能追加 (秒単位)
 - 2020/03/04
   - マインスイーパの追加 (6h実装)
 - 2018/07/20
