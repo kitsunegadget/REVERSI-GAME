@@ -317,11 +317,7 @@ class MineSweep:
                     if self.game[posY + v][posX + u] != self.OPEN:
                         self.__search(posY + v, posX + u)
         
-        self.__clearCheck()
-        
-
-    def __clearCheck(self):
-        """ クリアチェック """
+        # クリアチェック
         self.opened_count += 1
         if self.opened_count + self.mine_num == self.x * self.y:
             self.__gameClear()
