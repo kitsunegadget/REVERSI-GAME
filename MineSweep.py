@@ -43,6 +43,7 @@ class MineSweep:
 
         self.game_button = []
         self.thread = None
+        self.opened_count = 0
 
         self.__gameInit()
         self.__windowInit()
@@ -138,6 +139,7 @@ class MineSweep:
         self.__changeTitle("")
         self.__gameInit()
         self.click_count = 0
+        self.opened_count = 0
 
     def __countTime(self):
         """ 時間計測 (スレッド呼び出し専用) """
@@ -320,13 +322,8 @@ class MineSweep:
 
     def __clearCheck(self):
         """ クリアチェック """
-        openedCount = 0
-        for vals in self.game:
-            for val in vals:
-                if val & self.MINE == 1 or val == self.OPEN:
-                    openedCount += 1
-        
-        if openedCount == self.x * self.y:
+        self.opened_count += 1
+        if self.opened_count + self.mine_num == self.x * self.y:
             self.__gameClear()
 
 
