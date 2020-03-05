@@ -1,6 +1,5 @@
 import numpy as np
 import tkinter as tk
-import tkinter.messagebox as tkmsg
 import threading
 import time
 
@@ -36,10 +35,14 @@ class MineSweep:
 
         # Mine の数
         self.mine_num = 12
+        self.mine_remain = self.mine_num
 
         # time
         self.time_count = 0
         self.GAMEEND = False
+
+        self.game_button = []
+        self.thread = None
 
         self.__gameInit()
         self.__windowInit()
@@ -60,18 +63,37 @@ class MineSweep:
         print(data)
         
         self.game = data
-        self.game_button = []
     
     def __windowInit(self):
         self.root = tk.Tk()
-        self.root.title("マインスイーパー：")
-        frame = tk.Frame(self.root)
-        frame.grid()
+        self.root.wm_minsize(342, 418)
+        self.root.wm_resizable(False, False)
+        self.root.title("マインスイーパー")
+
+        # create info label
+        infoframe = tk.Frame(self.root)
+        self.lb_time = tk.Label(infoframe, width=21)
+        self.lb_time["text"] = "Time: " + str(self.time_count) + "s"
+        self.lb_time.grid(row=0, column=1)
+
+        bt_restart = tk.Button(infoframe)
+        bt_restart["text"] = "Re"
+        bt_restart["height"] = 2
+        bt_restart["width"] = 4
+        bt_restart.bind("<1>", (lambda e: self.__restart()))
+        bt_restart.grid(row=0, column=2)
+
+        self.lb_remain = tk.Label(infoframe, width=21)
+        self.lb_remain["text"] = "Remain: " + str(self.mine_remain)
+        self.lb_remain.grid(row=0, column=3)
+
+        infoframe.place(x=0, y=0)
 
         # ボタンイベント作成
+        gridframe = tk.Frame(self.root)
         for i, v in enumerate(self.game):
             for j, val in enumerate(v):
-                bt = tk.Button(frame)
+                bt = tk.Button(gridframe)
                 bt["height"] = 2
                 bt["width"] = 4
                 bt["bg"] = "#ccc"
@@ -85,6 +107,7 @@ class MineSweep:
                 bt.bind("<1>", (lambda e: self.__mainClick(e)))
                 bt.bind("<3>", (lambda e: self.__subClick(e)))
         
+        gridframe.place(x=0, y=49)
         self.game_button = np.array(self.game_button).reshape((self.y, self.x))
 
     def Start(self):
@@ -92,11 +115,34 @@ class MineSweep:
         print("MineSweep Start!")
         self.click_count = 0
         self.root.mainloop()
+    
+    def __restart(self):
+        """ Restart Game """
+        print("Restart!")
+        self.GAMEEND = True
+        for v in self.game_button:
+            for u in v:
+                u["text"] = ""
+                u["bg"] = "#ccc"
+                u["fg"] = "#eee"
+                u["relief"] = tk.RAISED
+                u["state"] = tk.NORMAL
+                u["disabledforeground"] = "#eee"
+                u.bind("<1>", (lambda e: self.__mainClick(e)))
+                u.bind("<3>", (lambda e: self.__subClick(e)))
+        
+        self.time_count = 1
+        self.__changeTime()
+        self.mine_remain = self.mine_num
+        self.__changeRemain()
+        self.__changeTitle("")
+        self.__gameInit()
+        self.click_count = 0
 
     def __countTime(self):
         """ 時間計測 (スレッド呼び出し専用) """
         while not self.GAMEEND:
-            self.__changeTitle("")
+            self.__changeTime()
             # print(self.time_count)
             self.time_count += 1
             time.sleep(1)
@@ -106,6 +152,7 @@ class MineSweep:
         """ Left click event """
         # set time thread
         if self.click_count == 0:
+            self.GAMEEND = False
             self.thread = threading.Thread(target=self.__countTime)
             self.thread.daemon = True
             self.thread.start()
@@ -143,6 +190,8 @@ class MineSweep:
             )
             event.widget.unbind("<1>")
             self.game[j][i] += self.FLAG
+            self.mine_remain -= 1
+            self.__changeRemain()
             # print(self.game[j][i])
         
         elif self.game[j][i] & self.FLAG == 0b10:
@@ -150,7 +199,9 @@ class MineSweep:
                 text="❔", 
                 foreground="#333",
             )
-            self.game[j][i] += (self.UNKNOWN - self.FLAG) 
+            self.game[j][i] += (self.UNKNOWN - self.FLAG)
+            self.mine_remain += 1
+            self.__changeRemain()
             # print(self.game[j][i])
         
         elif self.game[j][i] & self.UNKNOWN == 0b100:
@@ -165,7 +216,7 @@ class MineSweep:
     def __gameClear(self):
         self.GAMEEND = True
         print("Game Clear")
-        self.__changeTitle("Game Clear!")
+        self.__changeTitle("： Game Clear!")
         for v, vals in enumerate(self.game):
             for u, val in enumerate(vals):
                 if val & self.MINE == 1:
@@ -182,7 +233,7 @@ class MineSweep:
     def __gameOver(self):
         self.GAMEEND = True
         print("Game Over")
-        self.__changeTitle("Game Over!")
+        self.__changeTitle("： Game Over!")
         for v, vals in enumerate(self.game):
             for u, val in enumerate(vals):
                 if val & self.MINE == 1:
@@ -197,11 +248,18 @@ class MineSweep:
                 u.unbind("<3>")
     
     def __changeTitle(self, state):
-        """ `state`: display String. """
+        self.root.title("マインスイーパー" + state)
+    
+    def __changeTime(self):
+        """ time changes """
         if (self.GAMEEND):
             self.time_count -= 1
         
-        self.root.title("マインスイーパー： " + state + "  " + str(self.time_count) + "s")
+        self.lb_time["text"] = "Time: " + str(self.time_count) + "s"
+    
+    def __changeRemain(self):
+        """ remain current flags """
+        self.lb_remain["text"] = "Remain: " + str(self.mine_remain)
         
 
     def __search(self, posY, posX):
