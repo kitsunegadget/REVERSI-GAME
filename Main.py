@@ -4,7 +4,7 @@ import GameList
 import MineSweep
 
 def reverseStart():
-    game = GameList.ReverseGame()
+    game = GameList.Reversi()
     game.Start()
 
 def MineSweepStart():
