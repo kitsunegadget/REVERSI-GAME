@@ -1,13 +1,17 @@
-# REVERSI GAME
-
-## REVERSI
-
-## MINE SWEEPER
+# SIMPLE GAMES
 
 using tkinter from python.
 
-### History
+## Contents
 
+- ### REVERSI
+
+- ### MINESWEEPER
+
+## History
+
+- 2020/03/07
+  - Reversi: 探索の最適化
 - 2020/03/05
   - 時間計測機能追加 (秒単位)
   - リスタートボタンの追加 (+6h)

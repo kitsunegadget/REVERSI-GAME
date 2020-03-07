@@ -1,14 +1,13 @@
 import tkinter as tk
 import numpy as np
 import GameList
-import MineSweep
 
 def reverseStart():
     game = GameList.Reversi()
     game.Start()
 
 def MineSweepStart():
-    game = MineSweep.MineSweep();
+    game = GameList.MineSweep()
     game.Start()
 
 window = tk.Tk()
